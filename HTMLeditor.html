@@ -592,27 +592,22 @@ mark._editor_search.current {
         // MutationObserver: catches structural changes (add/remove elements etc.)
         mutationObserver = new MutationObserver(function(records) {
             if (updatingFromSource) return;
-            var ae = document.activeElement;
-            if (ae && (ae === previewFrame || ae.ownerDocument === doc)) return;
             var meaningful = false;
             for (var i = 0; i < records.length; i++) {
                 var t = records[i].type;
                 if (t === 'childList' || t === 'characterData') { meaningful = true; break; }
                 if (t === 'attributes') {
-                    // Allow class changes (search marks) without triggering sync
-                    // Only other attribute changes like contenteditable, src, href count
                     if (records[i].attributeName !== 'class') { meaningful = true; break; }
                 }
             }
             if (!meaningful) return;
 
             clearTimeout(updateTimeout);
-            setStatus('syncing');
             updateTimeout = setTimeout(function() {
                 syncPreviewToSource();
                 lastPolledHtml = getCleanHtml(doc);
                 setStatus('ready');
-            }, 200);
+            }, 300);
         });
 
         mutationObserver.observe(doc.body, {
@@ -623,14 +618,10 @@ mark._editor_search.current {
             attributeFilter: ['style', 'class', 'src', 'href', 'alt', 'title']
         });
 
-        // Polling fallback: every 800ms check if innerHTML changed (catches text edits
-        // that MutationObserver might miss in certain browser/contenteditable combos)
+        // Polling fallback: every 800ms check if innerHTML changed
         pollInterval = setInterval(function() {
             if (updatingFromSource) return;
             if (searchActive) return;
-            // Don't sync while user is editing in the iframe
-            var ae = document.activeElement;
-            if (ae && (ae === previewFrame || ae.ownerDocument === doc)) return;
             var current = getCleanHtml(doc);
             if (current !== lastPolledHtml) {
                 lastPolledHtml = current;
@@ -662,11 +653,6 @@ mark._editor_search.current {
 
         var doc = previewFrame.contentDocument;
         if (!doc || !doc.body) return;
-
-        // If the user is actively focused inside the iframe, skip sync to avoid
-        // stealing focus — the poll will pick up changes once they blur away
-        var ae = document.activeElement;
-        if (ae && (ae === previewFrame || ae.ownerDocument === doc)) return;
 
         var fullHtml = '<!DOCTYPE html>\n' + getCleanHtml(doc);
 
