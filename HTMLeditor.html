@@ -6,466 +6,104 @@
 <title>HTMLeditor</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
 <style>
-:root {
-    --bg: #1a1a2e;
-    --surface: #16213e;
-    --surface2: #0f3460;
-    --text: #e0e0e0;
-    --text-secondary: #a0a0b0;
-    --accent: #4a9eff;
-    --accent-dim: #2a6ecc;
-    --danger: #e0556a;
-    --success: #4caf84;
-    --border: #2a2a4a;
-    --divider-bg: #2a2a4a;
-    --scrollbar-thumb: #3a3a5a;
-    --scrollbar-track: #1a1a2e;
-    --flash-color: rgba(74, 158, 255, 0.15);
-    --font-mono: 'SF Mono', 'Consolas', 'Monaco', 'Courier New', monospace;
-    --radius: 8px;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; overflow:hidden; }
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    display:flex;
-    flex-direction:column;
-}
-
-/* Toolbar */
-.toolbar {
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:10px 16px;
-    background: var(--surface);
-    border-bottom:1px solid var(--border);
-    z-index:10;
-    flex-shrink:0;
-}
-.toolbar .logo {
-    font-weight:700;
-    font-size:15px;
-    color: var(--accent);
-    letter-spacing:-0.3px;
-    white-space:nowrap;
-}
-.toolbar .sep {
-    width:1px; height:22px;
-    background: var(--border);
-    margin:0 4px;
-}
-.btn {
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    padding:7px 14px;
-    border:1px solid var(--border);
-    border-radius:6px;
-    background: var(--surface2);
-    color: var(--text);
-    font-size:13px;
-    cursor:pointer;
-    transition: all 0.15s;
-    white-space:nowrap;
-    font-family: inherit;
-}
-.btn:hover { background: #1a3a6a; border-color: var(--accent-dim); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn.primary:hover { background: #5ab0ff; }
-.btn svg { width:16px; height:16px; flex-shrink:0; }
-.search-bar {
-    display:flex;
-    align-items:center;
-    gap:4px;
-    margin-left:auto;
-}
-.search-input {
-    width:160px;
-    padding:5px 10px;
-    border:1px solid var(--border);
-    border-radius:4px;
-    background:#12121f;
-    color:var(--text);
-    font-size:13px;
-    outline:none;
-    font-family:inherit;
-    transition: border-color 0.15s;
-}
-.search-input:focus { border-color:var(--accent); }
-.search-count {
-    font-size:12px;
-    color:var(--text-secondary);
-    min-width:40px;
-    text-align:center;
-    white-space:nowrap;
-}
-.search-nav {
-    padding:5px 8px !important;
-    font-size:14px !important;
-    line-height:1;
-}
-.filename {
-    font-size:13px;
-    color: var(--text-secondary);
-    max-width:260px;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-    flex:1;
-    min-width:0;
-}
-.status {
-    font-size:12px;
-    color: var(--text-secondary);
-    margin-left:auto;
-    display:flex;
-    align-items:center;
-    gap:6px;
-}
-.status .dot {
-    width:7px; height:7px;
-    border-radius:50%;
-    background: var(--success);
-    flex-shrink:0;
-}
-.status .dot.syncing { background: #f0a040; animation: pulse 0.6s infinite; }
-@keyframes pulse {
-    0%,100% { opacity:1; }
-    50% { opacity:0.3; }
-}
-
-/* Main area */
-.main {
-    display:flex;
-    flex:1;
-    min-height:0;
-    position:relative;
-}
-.pane {
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    min-width:0;
-    overflow:hidden;
-}
-.pane-header {
-    display:flex;
-    align-items:center;
-    padding:8px 14px;
-    background: var(--surface);
-    border-bottom:1px solid var(--border);
-    font-size:12px;
-    font-weight:600;
-    color: var(--text-secondary);
-    text-transform:uppercase;
-    letter-spacing:0.5px;
-    gap:8px;
-    flex-shrink:0;
-}
-.pane-header .dot-indicator {
-    width:8px; height:8px;
-    border-radius:50%;
-    background: var(--success);
-}
-.pane-body {
-    flex:1;
-    min-height:0;
-    position:relative;
-    overflow:hidden;
-}
-
-/* Divider */
-.divider {
-    width:6px;
-    background: var(--divider-bg);
-    cursor:col-resize;
-    flex-shrink:0;
-    position:relative;
-    transition: background 0.15s;
-}
-.divider:hover, .divider.active { background: var(--accent); }
-.divider::after {
-    content:'';
-    position:absolute;
-    top:50%; left:50%;
-    transform:translate(-50%,-50%);
-    width:2px; height:28px;
-    border-radius:1px;
-    background: rgba(255,255,255,0.3);
-}
-
-/* Preview iframe */
-#preview-frame {
-    width:100%; height:100%;
-    border:none;
-    background: #fff;
-}
-.preview-empty {
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    height:100%;
-    color: #666;
-    gap:16px;
-    background: #f5f5f5;
-}
-.preview-empty svg { width:64px; height:64px; opacity:0.4; }
-.preview-empty p { font-size:14px; }
-
-/* Source code editor */
-.editor-wrapper {
-    position:relative;
-    height:100%;
-    overflow:hidden;
-}
-.editor-wrapper .line-numbers {
-    position:absolute;
-    left:0; top:0; bottom:0;
-    width:50px;
-    padding:14px 0;
-    background: #12121f;
-    color: #555;
-    font-family: var(--font-mono);
-    font-size:13px;
-    line-height:1.65;
-    text-align:right;
-    overflow:hidden;
-    user-select:none;
-    z-index:3;
-    border-right:1px solid #1e1e30;
-}
-.editor-wrapper .line-numbers span {
-    display:block;
-    padding-right:12px;
-}
-.editor-scroll {
-    position:absolute;
-    left:50px;
-    top:0; right:0; bottom:0;
-    overflow:auto;
-}
-.editor-scroll pre {
-    margin:0;
-    padding:14px 16px;
-    font-family: var(--font-mono);
-    font-size:13px;
-    line-height:1.65;
-    white-space:pre-wrap;
-    word-wrap:break-word;
-    tab-size:2;
-    min-height:100%;
-}
-.editor-scroll pre code {
-    font-family: inherit;
-    font-size: inherit;
-}
-.editor-scroll textarea {
-    position:absolute;
-    top:0; left:0;
-    width:100%; height:100%;
-    padding:14px 16px;
-    font-family: var(--font-mono);
-    font-size:13px;
-    line-height:1.65;
-    white-space:pre-wrap;
-    word-wrap:break-word;
-    tab-size:2;
-    background:transparent;
-    color:transparent;
-    caret-color:#fff;
-    border:none;
-    outline:none;
-    resize:none;
-    z-index:2;
-    overflow:auto;
-}
-.editor-scroll textarea::selection {
-    background: rgba(74,158,255,0.25);
-}
-
-/* Flash effect */
-.flash {
-    animation: flashAnim 0.6s ease-out;
-}
-@keyframes flashAnim {
-    0% { box-shadow: inset 0 0 0 2px var(--accent); }
-    100% { box-shadow: inset 0 0 0 2px transparent; }
-}
-
-/* Prism theme override for dark bg */
-.editor-scroll pre[class*="language-"] {
-    background: #12121f;
-    color: #d4d4d4;
-    border-radius:0;
-}
-.token.tag { color: #569cd6; }
-.token.attr-name { color: #9cdcfe; }
-.token.attr-value { color: #ce9178; }
-.token.punctuation { color: #d4d4d4; }
-.token.comment { color: #6a9955; }
-.token.doctype { color: #569cd6; }
-.token.entity { color: #569cd6; }
-
-/* Search highlight */
-mark.search-highlight {
-    background: #f59e0b;
-    color: #000;
-    border-radius: 2px;
-}
-mark.search-highlight.current {
-    background: #ff6b35;
-    color: #000;
-}
-mark._editor_search {
-    background: #f59e0b;
-    color: #000;
-    border-radius: 2px;
-}
-mark._editor_search.current {
-    background: #ff6b35;
-    color: #000;
-}
-
-/* Upload overlay */
-.upload-overlay {
-    position:fixed;
-    top:0; left:0; right:0; bottom:0;
-    background: rgba(0,0,0,0.5);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:100;
-    backdrop-filter: blur(4px);
-}
-.upload-dialog {
-    background: var(--surface);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:32px;
-    text-align:center;
-    max-width:400px;
-    width:90%;
-}
-.upload-dialog h3 { margin-bottom:12px; font-size:18px; }
-.upload-dialog p { color: var(--text-secondary); font-size:14px; margin-bottom:20px; }
-.upload-zone {
-    border:2px dashed var(--border);
-    border-radius: var(--radius);
-    padding:40px 20px;
-    cursor:pointer;
-    transition: all 0.2s;
-}
-.upload-zone:hover { border-color: var(--accent); background: rgba(74,158,255,0.05); }
-.upload-zone svg { width:40px; height:40px; margin-bottom:12px; color: var(--text-secondary); }
-
-/* Toast */
-.toast {
-    position:fixed;
-    bottom:24px;
-    left:50%;
-    transform:translateX(-50%);
-    background: var(--surface2);
-    color: var(--text);
-    padding:10px 20px;
-    border-radius:20px;
-    font-size:13px;
-    z-index:200;
-    box-shadow:0 4px 12px rgba(0,0,0,0.3);
-    animation: toastIn 0.3s ease-out;
-}
-@keyframes toastIn {
-    from { opacity:0; transform:translateX(-50%) translateY(12px); }
-    to { opacity:1; transform:translateX(-50%) translateY(0); }
-}
-.toast.fadeout { animation: toastOut 0.3s ease-out forwards; }
-@keyframes toastOut {
-    from { opacity:1; }
-    to { opacity:0; }
-}
-
-/* Scrollbar */
-::-webkit-scrollbar { width:8px; height:8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius:4px; }
-::-webkit-scrollbar-thumb:hover { background: #4a4a6a; }
-::-webkit-scrollbar-corner { background: transparent; }
-
-/* Drag highlight */
-.pane.drag-over .pane-body::after {
-    content:'';
-    position:absolute;
-    top:0; left:0; right:0; bottom:0;
-    background: rgba(74,158,255,0.08);
-    z-index:5;
-    pointer-events:none;
-}
+:root { --bg:#1a1a2e; --surface:#16213e; --surface2:#0f3460; --text:#e0e0e0; --text-secondary:#a0a0b0; --accent:#4a9eff; --accent-dim:#2a6ecc; --success:#4caf84; --border:#2a2a4a; --scrollbar-thumb:#3a3a5a; --font-mono:'SF Mono',Consolas,Monaco,'Courier New',monospace; }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+.toolbar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.toolbar .logo{font-weight:700;font-size:15px;color:var(--accent);white-space:nowrap}
+.toolbar .sep{width:1px;height:22px;background:var(--border);margin:0 4px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
+.btn:hover{background:#1a3a6a;border-color:var(--accent-dim)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#5ab0ff}
+.btn svg{width:16px;height:16px;flex-shrink:0}
+.search-bar{display:flex;align-items:center;gap:4px;margin-left:auto}
+.search-input{width:160px;padding:5px 10px;border:1px solid var(--border);border-radius:4px;background:#12121f;color:var(--text);font-size:13px;outline:none;font-family:inherit;transition:border-color .15s}
+.search-input:focus{border-color:var(--accent)}
+.search-count{font-size:12px;color:var(--text-secondary);min-width:40px;text-align:center;white-space:nowrap}
+.search-nav{padding:5px 8px!important;font-size:14px!important;line-height:1}
+.filename{font-size:13px;color:var(--text-secondary);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.status{font-size:12px;color:var(--text-secondary);margin-left:auto;display:flex;align-items:center;gap:6px}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--success);flex-shrink:0}
+.status .dot.syncing{background:#f0a040;animation:pulse .6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.main{display:flex;flex:1;min-height:0}
+.pane{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.pane-header{display:flex;align-items:center;padding:8px 14px;background:var(--surface);border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;gap:8px;flex-shrink:0}
+.pane-header .dot-indicator{width:8px;height:8px;border-radius:50%;background:var(--success)}
+.pane-body{flex:1;min-height:0;position:relative;overflow:hidden}
+.divider{width:6px;background:var(--border);cursor:col-resize;flex-shrink:0;position:relative;transition:background .15s}
+.divider:hover,.divider.active{background:var(--accent)}
+.divider::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:28px;border-radius:1px;background:rgba(255,255,255,.3)}
+#preview-frame{width:100%;height:100%;border:none;background:#fff}
+.preview-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#666;gap:16px;background:#f5f5f5}
+.preview-empty svg{width:64px;height:64px;opacity:.4}
+.preview-empty p{font-size:14px}
+.editor-wrapper{position:relative;height:100%;overflow:hidden}
+.editor-wrapper .line-numbers{position:absolute;left:0;top:0;bottom:0;width:50px;padding:14px 0;background:#12121f;color:#555;font-family:var(--font-mono);font-size:13px;line-height:1.65;text-align:right;overflow:hidden;user-select:none;z-index:3;border-right:1px solid #1e1e30}
+.editor-wrapper .line-numbers span{display:block;padding-right:12px}
+.editor-scroll{position:absolute;left:50px;top:0;right:0;bottom:0;overflow:auto}
+.editor-scroll pre{margin:0;padding:14px 16px;font-family:var(--font-mono);font-size:13px;line-height:1.65;white-space:pre-wrap;word-wrap:break-word;tab-size:2;min-height:100%}
+.editor-scroll pre code{font-family:inherit;font-size:inherit}
+.editor-scroll textarea{position:absolute;top:0;left:0;width:100%;height:100%;padding:14px 16px;font-family:var(--font-mono);font-size:13px;line-height:1.65;white-space:pre-wrap;word-wrap:break-word;tab-size:2;background:transparent;color:transparent;caret-color:#fff;border:none;outline:none;resize:none;z-index:2;overflow:auto}
+.editor-scroll textarea::selection{background:rgba(74,158,255,.25)}
+.flash{animation:flashAnim .6s ease-out}
+@keyframes flashAnim{0%{box-shadow:inset 0 0 0 2px var(--accent)}100%{box-shadow:inset 0 0 0 2px transparent}}
+.editor-scroll pre[class*=language-]{background:#12121f;color:#d4d4d4;border-radius:0}
+.token.tag{color:#569cd6}.token.attr-name{color:#9cdcfe}.token.attr-value{color:#ce9178}.token.punctuation{color:#d4d4d4}.token.comment{color:#6a9955}.token.doctype{color:#569cd6}.token.entity{color:#569cd6}
+mark.search-highlight{background:#f59e0b;color:#000;border-radius:2px}
+mark.search-highlight.current{background:#ff6b35;color:#000}
+mark._editor_search{background:#f59e0b;color:#000}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;z-index:200;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:toastIn .3s ease-out}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast.fadeout{animation:toastOut .3s ease-out forwards}
+@keyframes toastOut{from{opacity:1}to{opacity:0}}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#4a4a6a}
+::-webkit-scrollbar-corner{background:transparent}
+.pane.drag-over .pane-body::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(74,158,255,.08);z-index:5;pointer-events:none}
 </style>
 </head>
 <body>
 
 <header class="toolbar">
-    <span class="logo">HTMLeditor</span>
-    <span class="sep"></span>
-    <button class="btn" id="btn-upload" title="上传 HTML 文件">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        上传
+    <span class="logo">HTMLeditor</span><span class="sep"></span>
+    <button class="btn" id="btn-upload" title="Upload HTML file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload
     </button>
-    <button class="btn primary" id="btn-download" title="下载修改后的 HTML">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        下载
-    </button>
-    <span class="sep"></span>
-    <span class="filename" id="filename">未加载文件</span>
+    <button class="btn primary" id="btn-download" title="Download modified HTML">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download
+    </button><span class="sep"></span>
+    <span class="filename" id="filename">demo.html</span>
     <div class="search-bar" id="search-bar">
-        <input type="text" id="search-input" class="search-input" placeholder="查找...">
+        <input type="text" id="search-input" class="search-input" placeholder="Search...">
         <span class="search-count" id="search-count"></span>
-        <button class="btn search-nav" id="btn-prev" title="上一个">&uarr;</button>
-        <button class="btn search-nav" id="btn-next" title="下一个">&darr;</button>
-        <button class="btn search-nav" id="btn-search-close" title="关闭">&times;</button>
+        <button class="btn search-nav" id="btn-prev" title="Previous">&uarr;</button>
+        <button class="btn search-nav" id="btn-next" title="Next">&darr;</button>
+        <button class="btn search-nav" id="btn-search-close" title="Close">&times;</button>
     </div>
-    <span class="status">
-        <span class="dot" id="status-dot"></span>
-        <span id="status-text">就绪</span>
-    </span>
+    <span class="status"><span class="dot" id="status-dot"></span><span id="status-text">Ready</span></span>
 </header>
 
 <main class="main" id="main">
-    <!-- Preview pane -->
     <div class="pane" id="preview-pane">
-        <div class="pane-header">
-            <span class="dot-indicator" style="background:var(--accent)"></span>
-            预览 / 编辑
-        </div>
+        <div class="pane-header"><span class="dot-indicator" style="background:var(--accent)"></span>Preview / Edit</div>
         <div class="pane-body" id="preview-body">
-            <div class="preview-empty" id="preview-empty">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-                <p>上传 HTML 文件以开始编辑</p>
-                <button class="btn primary" onclick="document.getElementById('file-input').click()">选择文件</button>
-            </div>
-            <iframe id="preview-frame" style="display:none"></iframe>
+            <iframe id="preview-frame"></iframe>
         </div>
     </div>
-
-    <!-- Divider -->
     <div class="divider" id="divider"></div>
-
-    <!-- Source pane -->
     <div class="pane" id="source-pane">
-        <div class="pane-header">
-            <span class="dot-indicator" style="background:#f0a040"></span>
-            源代码
-            <span style="margin-left:auto;font-weight:400;text-transform:none;letter-spacing:0" id="line-count">0 行</span>
-        </div>
+        <div class="pane-header"><span class="dot-indicator" style="background:#f0a040"></span>Source Code <span style="margin-left:auto;font-weight:400;text-transform:none;letter-spacing:0" id="line-count">0 lines</span></div>
         <div class="pane-body">
             <div class="editor-wrapper" id="editor-wrapper">
                 <div class="line-numbers" id="line-numbers"></div>
                 <div class="editor-scroll" id="editor-scroll">
                     <pre><code class="language-html" id="highlighted-code"></code></pre>
-                    <textarea id="source-textarea" spellcheck="false" placeholder="源代码将在此显示..."></textarea>
+                    <textarea id="source-textarea" spellcheck="false" placeholder="Source code appears here..."></textarea>
                 </div>
             </div>
         </div>
@@ -477,634 +115,201 @@ mark._editor_search.current {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
 <script>
-(function() {
-    // ── DOM refs ──────────────────────────────────
-    const previewFrame = document.getElementById('preview-frame');
-    const previewEmpty = document.getElementById('preview-empty');
-    const previewBody = document.getElementById('preview-body');
-    const sourceTextarea = document.getElementById('source-textarea');
-    const highlightedCode = document.getElementById('highlighted-code');
-    const lineNumbers = document.getElementById('line-numbers');
-    const editorScroll = document.getElementById('editor-scroll');
-    const editorWrapper = document.getElementById('editor-wrapper');
-    const filenameEl = document.getElementById('filename');
-    const statusDot = document.getElementById('status-dot');
-    const statusText = document.getElementById('status-text');
-    const lineCount = document.getElementById('line-count');
-    const divider = document.getElementById('divider');
-    const previewPane = document.getElementById('preview-pane');
-    const fileInput = document.getElementById('file-input');
-    const searchBar = document.getElementById('search-bar');
-    const searchInput = document.getElementById('search-input');
-    const searchCount = document.getElementById('search-count');
-    const btnPrev = document.getElementById('btn-prev');
-    const btnNext = document.getElementById('btn-next');
-    const btnSearchClose = document.getElementById('btn-search-close');
+(function(){
+var pf=document.getElementById('preview-frame'),
+    pe=document.getElementById('preview-empty'),
+    pb=document.getElementById('preview-body'),
+    st=document.getElementById('source-textarea'),
+    hc=document.getElementById('highlighted-code'),
+    ln=document.getElementById('line-numbers'),
+    es=document.getElementById('editor-scroll'),
+    ew=document.getElementById('editor-wrapper'),
+    fe=document.getElementById('filename'),
+    sd=document.getElementById('status-dot'),
+    sx=document.getElementById('status-text'),
+    lc=document.getElementById('line-count'),
+    dv=document.getElementById('divider'),
+    pp=document.getElementById('preview-pane'),
+    fi=document.getElementById('file-input'),
+    sb=document.getElementById('search-bar'),
+    si=document.getElementById('search-input'),
+    sc=document.getElementById('search-count'),
+    bp=document.getElementById('btn-prev'),
+    bn=document.getElementById('btn-next'),
+    bc=document.getElementById('btn-search-close');
 
-    // ── State ─────────────────────────────────────
-    let currentFilename = '';
-    let originalHtml = '';
-    let mutationObserver = null;
-    let pollInterval = null;
-    let lastPolledHtml = '';
-    let updatingFromSource = false;
-    let suppressSourceUpdate = false;
-    let updateTimeout = null;
-    let sourceUpdateTimeout = null;
-    let searchMatches = [];
-    let searchIndex = 0;
-    let searchActive = false;
-    let pendingSearch = null;
+var currentFilename='', originalHtml='', obs=null, poll=null, lastHtml='',
+    updatingFromSource=false, suppressSourceUpdate=false,
+    updateTimeout=null, sourceUpdateTimeout=null,
+    searchMatches=[], searchIndex=0, searchActive=false, pendingSearch=null;
 
-    // ── Toast ─────────────────────────────────────
-    function showToast(msg) {
-        const t = document.createElement('div');
-        t.className = 'toast';
-        t.textContent = msg;
-        document.body.appendChild(t);
-        setTimeout(() => { t.classList.add('fadeout'); setTimeout(() => t.remove(), 300); }, 2000);
+function toast(m){var t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.classList.add('fadeout');setTimeout(function(){t.remove()},300)},2000)}
+function setStatus(s){sd.className='dot';if(s==='syncing'){sd.classList.add('syncing');sx.textContent='Syncing...'}else if(s==='ready'){sx.textContent='Ready'}}
+function updateLineNumbers(t){var c=(t||'').split('\n').length;lc.textContent=c+' lines';var h='';for(var i=1;i<=c;i++)h+='<span>'+i+'</span>';ln.innerHTML=h}
+function highlightCode(t){hc.textContent=t;if(typeof Prism!=='undefined')Prism.highlightElement(hc);updateLineNumbers(t)}
+function flash(){ew.classList.remove('flash');void ew.offsetWidth;ew.classList.add('flash')}
+
+st.addEventListener('scroll',function(){es.scrollTop=st.scrollTop;es.scrollLeft=st.scrollLeft});
+
+// ── ContentEditable polling sync (simple, robust) ──
+function setupPreviewEditing(){
+    var d=pf.contentDocument;
+    if(!d||!d.body)return;
+    d.body.contentEditable=true;
+    var s=d.getElementById('_hint');
+    if(!s){s=d.createElement('style');s.id='_hint';s.textContent='body{outline:2px dashed transparent;outline-offset:2px;min-height:100vh}body:hover{outline-color:rgba(74,158,255,.4)}body:focus{outline-color:rgba(74,158,255,.8)}';d.head.appendChild(s)}
+    if(poll)clearInterval(poll);
+    lastHtml=getClean(d);
+    poll=setInterval(function(){
+        if(updatingFromSource||searchActive)return;
+        var cur=getClean(d);
+        if(cur!==lastHtml){
+            lastHtml=cur;
+            syncPvToSrc(d);
+        }
+    },400);
+}
+
+function getClean(d){
+    var h=d.getElementById('_hint');if(h)h.remove();
+    var ce=d.body.hasAttribute('contenteditable');if(ce)d.body.removeAttribute('contenteditable');
+    var html=d.documentElement.outerHTML;
+    if(h)d.head.appendChild(h);if(ce)d.body.setAttribute('contenteditable','true');
+    return html;
+}
+
+function syncPvToSrc(d){
+    if(updatingFromSource)return;
+    if(!d||!d.body)return;
+    var full='<!DOCTYPE html>\n'+getClean(d);
+    if(st.value===full)return;
+    originalHtml=full;
+    suppressSourceUpdate=true;
+    st.value=full;
+    highlightCode(full);
+    if(searchActive&&si.value)performSearch(si.value);
+    flash();
+}
+
+function syncSrcToPv(){
+    var h=st.value;if(!h.trim())return;
+    updatingFromSource=true;setStatus('syncing');
+    pf.srcdoc=h;
+    pf.addEventListener('load',function l(){pf.removeEventListener('load',l);setupPreviewEditing();originalHtml=h;updatingFromSource=false;setStatus('ready')});
+}
+
+function loadHtml(h,f){
+    originalHtml=h;currentFilename=f||'index.html';fe.textContent=currentFilename;
+    pf.style.display='block';pe.style.display='none';
+    updatingFromSource=true;setStatus('syncing');pf.srcdoc=h;
+    pf.addEventListener('load',function l(){pf.removeEventListener('load',l);setupPreviewEditing();updatingFromSource=false;setStatus('ready')});
+    st.value=h;highlightCode(h);
+}
+
+st.addEventListener('input',function(){
+    if(suppressSourceUpdate){suppressSourceUpdate=false;highlightCode(st.value);updateLineNumbers(st.value);return}
+    highlightCode(st.value);updateLineNumbers(st.value);
+    clearTimeout(sourceUpdateTimeout);
+    sourceUpdateTimeout=setTimeout(function(){syncSrcToPv()},600);
+});
+
+// ── Download ──
+function downloadHtml(){
+    if(!originalHtml&&!st.value.trim()){toast('Nothing to download');return}
+    var h=st.value||originalHtml,b=new Blob([h],{type:'text/html;charset=UTF-8'});
+    var u=URL.createObjectURL(b),a=document.createElement('a');
+    a.href=u;a.download=currentFilename||'index.html';document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(u);
+    toast('Downloaded: '+(currentFilename||'index.html'));
+}
+document.getElementById('btn-download').addEventListener('click',downloadHtml);
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();downloadHtml()}});
+
+// ── Upload ──
+document.getElementById('btn-upload').addEventListener('click',function(){fi.click()});
+fi.addEventListener('change',function(){
+    var f=fi.files[0];if(!f)return;
+    var r=new FileReader();r.onload=function(e){loadHtml(e.target.result,f.name);toast('Loaded: '+f.name)};
+    r.onerror=function(){toast('File read failed')};r.readAsText(f,'UTF-8');fi.value='';
+});
+
+// ── Drag & drop ──
+pb.addEventListener('dragover',function(e){e.preventDefault();pp.classList.add('drag-over')});
+pb.addEventListener('dragleave',function(e){e.preventDefault();pp.classList.remove('drag-over')});
+pb.addEventListener('drop',function(e){
+    e.preventDefault();pp.classList.remove('drag-over');
+    var f=e.dataTransfer.files[0];if(!f)return;
+    if(!f.name.match(/\.html?$/i)){toast('Please drop .html or .htm files');return}
+    var r=new FileReader();r.onload=function(ev){loadHtml(ev.target.result,f.name);toast('Loaded: '+f.name)};
+    r.readAsText(f,'UTF-8');
+});
+
+// ── Resizable divider ──
+var dragging=false;
+dv.addEventListener('mousedown',function(e){e.preventDefault();dragging=true;dv.classList.add('active');document.body.style.cursor='col-resize';document.body.style.userSelect='none'});
+document.addEventListener('mousemove',function(e){
+    if(!dragging)return;
+    var r=document.getElementById('main').getBoundingClientRect(),x=e.clientX-r.left;
+    var pct=Math.max(20,Math.min(80,(x/r.width)*100));
+    pp.style.flex=pct;document.getElementById('source-pane').style.flex=(100-pct);
+});
+document.addEventListener('mouseup',function(){if(!dragging)return;dragging=false;dv.classList.remove('active');document.body.style.cursor='';document.body.style.userSelect=''});
+
+// ── Search (simplified) ──
+function clearSearch(){searchMatches=[];searchActive=false;highlightCode(st.value);var d=pf.contentDocument;if(d){d.querySelectorAll('mark._editor_search').forEach(function(m){m.parentNode.replaceChild(document.createTextNode(m.textContent),m)})}}
+function performSearch(q){
+    clearSearch();searchActive=true;searchMatches=[];searchIndex=0;
+    if(!q){searchActive=false;return}
+    var lo=q.toLowerCase(),ql=q.length,d=pf.contentDocument,total=0;
+    if(d&&d.body){total=hlBody(d.body,lo,q)}
+    highlightCode(st.value);
+    if(total>0){
+        var nm=[],p=0,w=document.createTreeWalker(hc,NodeFilter.SHOW_TEXT,null,false);
+        while(w.nextNode()){var n=w.currentNode,l=n.textContent.length;nm.push({node:n,start:p,end:p+l});p+=l}
+        var vt=nm.map(function(e){return e.node.textContent}).join(''),vi=0;
+        while((vi=vt.toLowerCase().indexOf(lo,vi))!==-1&&searchMatches.length<total){searchMatches.push({start:vi,length:ql});vi+=ql}
+        for(var mi=searchMatches.length-1;mi>=0;mi--)wrapPos(hc,searchMatches[mi].start,searchMatches[mi].length);
     }
-
-    // ── Status ────────────────────────────────────
-    function setStatus(state) {
-        statusDot.className = 'dot';
-        if (state === 'syncing') { statusDot.classList.add('syncing'); statusText.textContent = '同步中...'; }
-        else if (state === 'ready') { statusText.textContent = '就绪'; }
-        else if (state === 'editing') { statusText.textContent = '编辑中'; }
+    updateLineNumbers(st.value);
+    if(searchMatches.length>0){sc.textContent='1/'+searchMatches.length;searchIndex=0;activate(0)}
+    else sc.textContent='0/0';
+}
+function hlBody(root,lo,q){
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:function(n){if(n.parentNode.nodeName==='SCRIPT'||n.parentNode.nodeName==='STYLE')return 2;if(n.textContent.toLowerCase().indexOf(lo)===-1)return 1;return 1}});
+    var tns=[];while(w.nextNode())tns.push(w.currentNode);
+    var total=0;
+    for(var i=0;i<tns.length;i++){
+        var n=tns[i],text=n.textContent,lo2=text.toLowerCase(),idx=0,frag=document.createDocumentFragment(),last=0,count=0;
+        while((idx=lo2.indexOf(lo,last))!==-1){if(idx>last)frag.appendChild(document.createTextNode(text.slice(last,idx)));var mk=document.createElement('mark');mk.className='_editor_search';mk.textContent=text.slice(idx,idx+q.length);frag.appendChild(mk);last=idx+q.length;lo2=text.toLowerCase();count++}
+        if(count>0){if(last<text.length)frag.appendChild(document.createTextNode(text.slice(last)));if(n.parentNode)n.parentNode.replaceChild(frag,n);total+=count}
     }
-
-    // ── Line numbers ─────────────────────────────
-    function updateLineNumbers(text) {
-        const count = (text || '').split('\n').length;
-        lineCount.textContent = count + ' 行';
-        let html = '';
-        for (let i = 1; i <= count; i++) html += '<span>' + i + '</span>';
-        lineNumbers.innerHTML = html;
-    }
-
-    // ── Highlight code ───────────────────────────
-    function highlightCode(text) {
-        highlightedCode.textContent = text;
-        if (typeof Prism !== 'undefined') {
-            Prism.highlightElement(highlightedCode);
-        }
-        updateLineNumbers(text);
-    }
-
-    // ── Flash editor ─────────────────────────────
-    function flashEditor() {
-        editorWrapper.classList.remove('flash');
-        void editorWrapper.offsetWidth;
-        editorWrapper.classList.add('flash');
-    }
-
-    // ── Scroll sync ──────────────────────────────
-    sourceTextarea.addEventListener('scroll', () => {
-        editorScroll.scrollTop = sourceTextarea.scrollTop;
-        editorScroll.scrollLeft = sourceTextarea.scrollLeft;
-    });
-
-    // ── Inject preview editing capability ─────────
-    function setupPreviewEditing() {
-        const doc = previewFrame.contentDocument;
-        if (!doc || !doc.body) return;
-
-        doc.body.contentEditable = true;
-
-        let style = doc.getElementById('_editor_hint_style');
-        if (!style) {
-            style = doc.createElement('style');
-            style.id = '_editor_hint_style';
-            style.textContent = 'body{outline:2px dashed transparent;outline-offset:2px;min-height:100vh}body:hover{outline-color:rgba(74,158,255,0.4)}body:focus{outline-color:rgba(74,158,255,0.8)}mark._editor_search{background:#f59e0b;color:#000;border-radius:2px}mark._editor_search.current{background:#ff6b35;color:#000}';
-            doc.head.appendChild(style);
-        }
-
-        // Clean up previous
-        if (mutationObserver) { mutationObserver.disconnect(); mutationObserver = null; }
-        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-
-        // Wait a tick for the DOM to settle after iframe load before capturing baseline
-        setTimeout(function() {
-            if (updatingFromSource) return;
-            lastPolledHtml = getCleanHtml(doc);
-        }, 100);
-
-        // MutationObserver: catches structural changes (add/remove elements etc.)
-        mutationObserver = new MutationObserver(function(records) {
-            if (updatingFromSource) return;
-            var meaningful = false;
-            for (var i = 0; i < records.length; i++) {
-                var t = records[i].type;
-                if (t === 'childList' || t === 'characterData') { meaningful = true; break; }
-                if (t === 'attributes') {
-                    if (records[i].attributeName !== 'class') { meaningful = true; break; }
-                }
-            }
-            if (!meaningful) return;
-
-            clearTimeout(updateTimeout);
-            updateTimeout = setTimeout(function() {
-                syncPreviewToSource();
-                lastPolledHtml = getCleanHtml(doc);
-                setStatus('ready');
-            }, 300);
-        });
-
-        mutationObserver.observe(doc.body, {
-            childList: true,
-            subtree: true,
-            characterData: true,
-            attributes: true,
-            attributeFilter: ['style', 'class', 'src', 'href', 'alt', 'title']
-        });
-
-        // Polling fallback: every 800ms check if innerHTML changed
-        pollInterval = setInterval(function() {
-            if (updatingFromSource) return;
-            if (searchActive) return;
-            var current = getCleanHtml(doc);
-            if (current !== lastPolledHtml) {
-                lastPolledHtml = current;
-                clearTimeout(updateTimeout);
-                setStatus('syncing');
-                updateTimeout = setTimeout(function() {
-                    syncPreviewToSource();
-                    lastPolledHtml = getCleanHtml(doc);
-                    setStatus('ready');
-                }, 200);
-            }
-        }, 800);
-    }
-
-    function getCleanHtml(doc) {
-        var hint = doc.getElementById('_editor_hint_style');
-        if (hint) hint.remove();
-        var hadContentEditable = doc.body.hasAttribute('contenteditable');
-        if (hadContentEditable) doc.body.removeAttribute('contenteditable');
-        var html = doc.documentElement.outerHTML;
-        if (hint) doc.head.appendChild(hint);
-        if (hadContentEditable) doc.body.setAttribute('contenteditable', 'true');
-        return html;
-    }
-
-    // ── Sync preview → source ────────────────────
-    function syncPreviewToSource() {
-        if (updatingFromSource) return;
-
-        var doc = previewFrame.contentDocument;
-        if (!doc || !doc.body) return;
-
-        var fullHtml = '<!DOCTYPE html>\n' + getCleanHtml(doc);
-
-        if (sourceTextarea.value !== fullHtml) {
-            originalHtml = fullHtml;
-            suppressSourceUpdate = true;
-            sourceTextarea.value = fullHtml;
-            highlightCode(fullHtml);
-            if (searchActive && searchInput.value) {
-                performSearch(searchInput.value);
-            }
-            flashEditor();
-        }
-    }
-
-    // ── Sync source → preview ────────────────────
-    function syncSourceToPreview() {
-        const html = sourceTextarea.value;
-        if (!html.trim()) return;
-
-        updatingFromSource = true;
-        setStatus('syncing');
-
-        previewFrame.srcdoc = html;
-
-        // Re-setup after load
-        previewFrame.addEventListener('load', function onLoad() {
-            previewFrame.removeEventListener('load', onLoad);
-            setupPreviewEditing();
-            originalHtml = html;
-            updatingFromSource = false;
-            setStatus('ready');
-        });
-    }
-
-    // ── Load HTML into editor ────────────────────
-    function loadHtml(html, filename) {
-        originalHtml = html;
-        currentFilename = filename || 'index.html';
-        filenameEl.textContent = currentFilename;
-
-        // Show iframe, hide empty state
-        previewFrame.style.display = 'block';
-        previewEmpty.style.display = 'none';
-
-        // Load preview
-        updatingFromSource = true;
-        setStatus('syncing');
-        previewFrame.srcdoc = html;
-
-        previewFrame.addEventListener('load', function onLoad() {
-            previewFrame.removeEventListener('load', onLoad);
-            setupPreviewEditing();
-            updatingFromSource = false;
-            setStatus('ready');
-        });
-
-        // Load source
-        sourceTextarea.value = html;
-        highlightCode(html);
-    }
-
-    // ── Source textarea input (debounced) ─────────
-    sourceTextarea.addEventListener('input', function() {
-        if (suppressSourceUpdate) {
-            suppressSourceUpdate = false;
-            // Still update highlight
-            highlightCode(sourceTextarea.value);
-            updateLineNumbers(sourceTextarea.value);
-            return;
-        }
-
-        highlightCode(sourceTextarea.value);
-        updateLineNumbers(sourceTextarea.value);
-
-        clearTimeout(sourceUpdateTimeout);
-        sourceUpdateTimeout = setTimeout(function() {
-            syncSourceToPreview();
-        }, 600);
-    });
-
-    // ── Keyboard shortcut: Ctrl+S / Cmd+S ────────
-    document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-            e.preventDefault();
-            downloadHtml();
-        }
-    });
-
-    // ── File upload ──────────────────────────────
-    document.getElementById('btn-upload').addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', function() {
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            loadHtml(e.target.result, file.name);
-            showToast('已加载: ' + file.name);
-        };
-        reader.onerror = function() {
-            showToast('文件读取失败');
-        };
-        reader.readAsText(file, 'UTF-8');
-        fileInput.value = '';
-    });
-
-    // ── Download ─────────────────────────────────
-    function downloadHtml() {
-        if (!originalHtml && !sourceTextarea.value.trim()) {
-            showToast('没有可下载的内容');
-            return;
-        }
-
-        // Use current textarea content (may have been edited in source)
-        const html = sourceTextarea.value || originalHtml;
-        const blob = new Blob([html], { type: 'text/html;charset=UTF-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = currentFilename || 'index.html';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('下载完成: ' + (currentFilename || 'index.html'));
-    }
-    document.getElementById('btn-download').addEventListener('click', downloadHtml);
-
-    // ── Drag & drop ──────────────────────────────
-    previewBody.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        previewPane.classList.add('drag-over');
-    });
-    previewBody.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        previewPane.classList.remove('drag-over');
-    });
-    previewBody.addEventListener('drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        previewPane.classList.remove('drag-over');
-
-        const file = e.dataTransfer.files[0];
-        if (!file) return;
-        if (!file.name.match(/\.html?$/i)) {
-            showToast('请上传 .html 或 .htm 文件');
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            loadHtml(ev.target.result, file.name);
-            showToast('已加载: ' + file.name);
-        };
-        reader.readAsText(file, 'UTF-8');
-    });
-
-    // ── Resizable divider ────────────────────────
-    let isDragging = false;
-    divider.addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        isDragging = true;
-        divider.classList.add('active');
-        document.body.style.cursor = 'col-resize';
-        document.body.style.userSelect = 'none';
-    });
-    document.addEventListener('mousemove', function(e) {
-        if (!isDragging) return;
-        const main = document.getElementById('main');
-        const rect = main.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const pct = Math.max(20, Math.min(80, (x / rect.width) * 100));
-        previewPane.style.flex = pct;
-        document.getElementById('source-pane').style.flex = (100 - pct);
-    });
-    document.addEventListener('mouseup', function() {
-        if (!isDragging) return;
-        isDragging = false;
-        divider.classList.remove('active');
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-    });
-
-    function clearSearchHighlights() {
-        searchMatches = [];
-        searchActive = false;
-        highlightCode(sourceTextarea.value);
-        var doc = previewFrame.contentDocument;
-        if (doc) {
-            var previewMarks = doc.querySelectorAll('mark._editor_search');
-            previewMarks.forEach(function(m) {
-                var parent = m.parentNode;
-                parent.replaceChild(document.createTextNode(m.textContent), m);
-            });
-        }
-    }
-
-    function performSearch(query) {
-        clearSearchHighlights();
-        searchActive = true;
-        searchMatches = [];
-        searchIndex = 0;
-
-        if (!query) {
-            searchCount.textContent = '';
-            searchActive = false;
-            return;
-        }
-
-        var lower = query.toLowerCase();
-        var qlen = query.length;
-
-        // ── 1. Count matches from preview visible text ──
-        var doc = previewFrame.contentDocument;
-        var totalMatches = 0;
-        if (doc && doc.body) {
-            var allVisible = extractVisibleText(doc.body);
-            var pi = 0;
-            while ((pi = allVisible.toLowerCase().indexOf(lower, pi)) !== -1) {
-                totalMatches++;
-                pi += qlen;
-            }
-        }
-
-        // ── 2. Highlight preview ──
-        if (doc && doc.body) {
-            highlightBodyText(doc.body, lower, query);
-        }
-
-        // ── 3. Prism the source, find matches, wrap ──
-        highlightCode(sourceTextarea.value);
-        if (totalMatches > 0) {
-            // Find match positions from the now-Prism-highlighted DOM
-            var nodeMap = buildNodeMap(highlightedCode);
-            var visibleText = nodeMap.map(function(e) { return e.node.textContent; }).join('');
-            var vi = 0;
-            while ((vi = visibleText.toLowerCase().indexOf(lower, vi)) !== -1 && searchMatches.length < totalMatches) {
-                searchMatches.push({ start: vi, length: qlen });
-                vi += qlen;
-            }
-            // Apply marks in reverse
-            for (var mi = searchMatches.length - 1; mi >= 0; mi--) {
-                wrapAtVisiblePosition(highlightedCode, searchMatches[mi].start, searchMatches[mi].length);
-            }
-        }
-
-        updateLineNumbers(sourceTextarea.value);
-
-        if (searchMatches.length > 0) {
-            searchCount.textContent = '1/' + searchMatches.length;
-            searchIndex = 0;
-            activateMatch(0);
-        } else {
-            searchCount.textContent = '0/0';
-        }
-    }
-
-    function buildNodeMap(root) {
-        var map = [];
-        var pos = 0;
-        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
-        while (walker.nextNode()) {
-            var n = walker.currentNode;
-            var len = n.textContent.length;
-            map.push({ node: n, start: pos, end: pos + len });
-            pos += len;
-        }
-        return map;
-    }
-
-    function wrapAtVisiblePosition(root, start, len) {
-        var nodeMap = buildNodeMap(root);
-        var targetEnd = start + len;
-        for (var i = 0; i < nodeMap.length; i++) {
-            var e = nodeMap[i];
-            if (e.end <= start) continue;
-            if (e.start >= targetEnd) break;
-
-            var localStart = Math.max(0, start - e.start);
-            var localEnd = Math.min(e.node.textContent.length, targetEnd - e.start);
-            if (localEnd <= localStart) continue;
-
-            var text = e.node.textContent;
-            var before = text.slice(0, localStart);
-            var middle = text.slice(localStart, localEnd);
-            var after = text.slice(localEnd);
-
-            var frag = document.createDocumentFragment();
-            if (before) frag.appendChild(document.createTextNode(before));
-            var mark = document.createElement('mark');
-            mark.className = 'search-highlight';
-            mark.textContent = middle;
-            frag.appendChild(mark);
-            if (after) frag.appendChild(document.createTextNode(after));
-
-            var parent = e.node.parentNode;
-            if (parent) {
-                parent.insertBefore(frag, e.node);
-                parent.removeChild(e.node);
-            }
-
-            start += (localEnd - localStart);
-            if (start >= targetEnd) break;
-        }
-    }
-
-    function extractVisibleText(node) {
-        var out = '';
-        if (node.nodeType === 3) {
-            if (node.parentNode && (node.parentNode.nodeName === 'SCRIPT' || node.parentNode.nodeName === 'STYLE')) return '';
-            return node.textContent;
-        }
-        if (node.nodeType === 1 && node.childNodes) {
-            var kids = node.childNodes;
-            for (var i = 0; i < kids.length; i++) {
-                out += extractVisibleText(kids[i]);
-            }
-        }
-        return out;
-    }
-
-    function highlightBodyText(root, lowerQuery, originalQuery) {
-        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-            acceptNode: function(n) {
-                if (n.parentNode.nodeName === 'SCRIPT' || n.parentNode.nodeName === 'STYLE') return NodeFilter.FILTER_REJECT;
-                if (n.textContent.toLowerCase().indexOf(lowerQuery) === -1) return NodeFilter.FILTER_SKIP;
-                return NodeFilter.FILTER_ACCEPT;
-            }
-        });
-        var textNodes = [];
-        while (walker.nextNode()) { textNodes.push(walker.currentNode); }
-
-        for (var i = 0; i < textNodes.length; i++) {
-            var node = textNodes[i];
-            var text = node.textContent;
-            var lower = text.toLowerCase();
-            var idx = 0;
-            var frag = document.createDocumentFragment();
-            var last = 0;
-            while ((idx = lower.indexOf(lowerQuery, last)) !== -1) {
-                if (idx > last) frag.appendChild(document.createTextNode(text.slice(last, idx)));
-                var mark = document.createElement('mark');
-                mark.className = '_editor_search';
-                mark.textContent = text.slice(idx, idx + originalQuery.length);
-                frag.appendChild(mark);
-                last = idx + originalQuery.length;
-            }
-            if (last > 0) {
-                if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
-                if (node.parentNode) {
-                    node.parentNode.replaceChild(frag, node);
-                }
-            }
-        }
-    }
-
-    function activateMatch(index) {
-        if (index < 0 || index >= searchMatches.length) return;
-
-        var marks = highlightedCode.querySelectorAll('mark.search-highlight.current');
-        marks.forEach(function(m) { m.classList.remove('current'); });
-
-        var allMarks = highlightedCode.querySelectorAll('mark.search-highlight');
-        if (allMarks[index]) {
-            allMarks[index].classList.add('current');
-            allMarks[index].scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }
-
-        var doc = previewFrame.contentDocument;
-        if (doc) {
-            var pMarks = doc.querySelectorAll('mark._editor_search.current');
-            pMarks.forEach(function(m) { m.classList.remove('current'); });
-            if (pMarks[index]) {
-                pMarks[index].classList.add('current');
-                // Prevent scrollIntoView mutation from triggering preview→source sync
-                updatingFromSource = true;
-                pMarks[index].scrollIntoView({ block: 'center', behavior: 'smooth' });
-                // But don't let this flag stick — the scroll is done, and we don't
-                // want to block real user edits. Reset after a short delay.
-                clearTimeout(updateTimeout);
-                updateTimeout = setTimeout(function() {
-                    updatingFromSource = false;
-                }, 50);
-            }
-        }
-
-        searchCount.textContent = (index + 1) + '/' + searchMatches.length;
-        searchIndex = index;
-    }
-
-    function navigateSearch(direction) {
-        if (searchMatches.length === 0) return;
-        var newIndex = searchIndex + direction;
-        if (newIndex < 0) newIndex = searchMatches.length - 1;
-        if (newIndex >= searchMatches.length) newIndex = 0;
-        activateMatch(newIndex);
-    }
-
-    // Search input events
-    searchInput.addEventListener('input', function() {
-        clearTimeout(pendingSearch);
-        var q = searchInput.value;
-        pendingSearch = setTimeout(function() {
-            performSearch(q);
-        }, 300);
-    });
-
-    searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            navigateSearch(e.shiftKey ? -1 : 1);
-        }
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            closeSearch();
-        }
-    });
-
-    btnPrev.addEventListener('click', function() { navigateSearch(-1); });
-    btnNext.addEventListener('click', function() { navigateSearch(1); });
-    btnSearchClose.addEventListener('click', closeSearch);
-
-    function closeSearch() {
-        searchActive = false;
-        clearSearchHighlights();
-        searchBar.style.display = 'none';
-        searchMatches = [];
-        searchIndex = 0;
-        searchInput.value = '';
-        searchCount.textContent = '';
-    }
-
-    // Ctrl+F / Cmd+F to open search
-    document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-            e.preventDefault();
-            searchBar.style.display = 'flex';
-            searchInput.focus();
-            searchInput.select();
-        }
-    });
-
-    // ── Default demo content ──────────────────────
-    var DEFAULT_HTML = '<!DOCTYPE html>\n<html lang=\"zh-CN\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>示例页面 - HTMLeditor</title>\n    <style>\n        body {\n            font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif;\n            max-width: 720px;\n            margin: 40px auto;\n            padding: 0 20px;\n            line-height: 1.7;\n            color: #333;\n            background: #fafafa;\n        }\n        h1 { color: #2563eb; font-size: 28px; border-bottom: 2px solid #e5e7eb; padding-bottom: 12px; }\n        h2 { color: #1e40af; font-size: 20px; margin-top: 24px; }\n        .card {\n            background: white;\n            border: 1px solid #e5e7eb;\n            border-radius: 8px;\n            padding: 20px;\n            margin: 16px 0;\n            box-shadow: 0 1px 3px rgba(0,0,0,0.08);\n        }\n        .highlight {\n            background: linear-gradient(120deg, #fef08a 0%, #fef08a 100%);\n            padding: 2px 6px;\n            border-radius: 3px;\n        }\n        ul { padding-left: 20px; }\n        li { margin: 6px 0; }\n        code {\n            background: #f1f5f9;\n            padding: 2px 6px;\n            border-radius: 4px;\n            font-family: \'SF Mono\', \'Consolas\', monospace;\n            font-size: 14px;\n        }\n        .footer {\n            margin-top: 40px;\n            padding-top: 16px;\n            border-top: 1px solid #e5e7eb;\n            color: #999;\n            font-size: 13px;\n        }\n    </style>\n</head>\n<body>\n    <h1>🖊️ HTMLeditor — 可视化编辑器</h1>\n    <p style=\"color:#666;font-size:15px;margin-top:-8px\">by RayZhang</p>\n\n    <p>这个页面是一个 <span class=\"highlight\">可直接编辑</span> 的示例。点击左侧预览区域的任意文字即可开始编辑。</p>\n\n    <div class=\"card\">\n        <h2>核心痛点</h2>\n        <p>在日常使用大模型（如 ChatGPT、Claude 等）生成 HTML5 页面时，经常面临以下问题：</p>\n        <ul>\n            <li><strong>微调困难：</strong>大模型一次性生成的页面难以精确匹配需求，反复通过对话调整消耗大量 token</li>\n            <li><strong>Token 浪费：</strong>每次修改都需重新发送完整上下文，频繁微调成本高昂</li>\n            <li><strong>数据安全：</strong>将敏感内容通过云端 AI 反复处理存在泄露风险，本地化编辑是更安全的选择</li>\n            <li><strong>效率低下：</strong>在源码和预览之间来回切换，无法直观地看到修改效果</li>\n        </ul>\n        <p style=\"margin-top:8px;color:#2563eb;\">HTMLeditor 正是为解决这些痛点而生 —— 所见即所得编辑，零 token 消耗，完全本地运行，数据不出浏览器。</p>\n    </div>\n\n    <div class=\"card\">\n        <h2>核心功能</h2>\n        <ul>\n            <li><strong>所见即所得编辑：</strong>在预览区域直接修改文字内容</li>\n            <li><strong>实时高亮同步：</strong>右侧源代码面板实时高亮显示变更</li>\n            <li><strong>双向同步：</strong>预览编辑 → 源码更新；源码修改 → 预览刷新</li>\n            <li><strong>一键下载：</strong>编辑完成后下载修改后的 HTML 文件</li>\n        </ul>\n    </div>\n\n    <div class=\"card\">\n        <h2>全文搜索</h2>\n        <p>按 <code>Ctrl+F</code> / <code>⌘F</code> 打开搜索栏，输入关键词即可在<strong>预览区和源代码</strong>中同步高亮匹配结果：</p>\n        <ul>\n            <li>使用 <code>Enter</code> 跳转到下一个匹配项，<code>Shift+Enter</code> 回到上一个</li>\n            <li>当前匹配项以<strong>橙色</strong>高亮，其余以<strong>黄色</strong>标记</li>\n            <li>预览区和源代码<strong>两侧同步导航</strong>，点击上下箭头自由切换</li>\n            <li>按 <code>Esc</code> 或点击关闭按钮退出搜索</li>\n        </ul>\n    </div>\n\n    <div class=\"card\">\n        <h2>快捷操作</h2>\n        <ul>\n            <li>按 <code>Ctrl+S</code> / <code>⌘S</code> 快速下载</li>\n            <li>拖拽 <code>.html</code> 文件到预览区域即可加载</li>\n            <li>拖动中间分隔条可调整左右面板比例</li>\n        </ul>\n    </div>\n\n    <div class=\"card\">\n        <h2>试试修改这里</h2>\n        <p>你可以点击这段文字进行编辑。试试修改标题、添加新内容，或者调整样式。</p>\n    </div>\n\n    <p class=\"footer\">HTMLeditor — 完全运行在浏览器中的 HTML 编辑器。无需后端服务。</p>\n</body>\n</html>';
-
-    // ── Init ─────────────────────────────────────
-    setStatus('ready');
-    // Auto-load the default demo page
-    loadHtml(DEFAULT_HTML, 'demo.html');
+    return total;
+}
+function wrapPos(root,start,len){
+    var nm=[],p=0,w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false);
+    while(w.nextNode()){var n=w.currentNode,l=n.textContent.length;nm.push({node:n,start:p,end:p+l});p+=l}
+    var te=start+len;
+    for(var i=0;i<nm.length;i++){var e=nm[i];if(e.end<=start)continue;if(e.start>=te)break;var ls=Math.max(0,start-e.start),le=Math.min(e.node.textContent.length,te-e.start);if(le<=ls)continue;var text=e.node.textContent,bef=text.slice(0,ls),mid=text.slice(ls,le),aft=text.slice(le);var frag=document.createDocumentFragment();if(bef)frag.appendChild(document.createTextNode(bef));var mk=document.createElement('mark');mk.className='search-highlight';mk.textContent=mid;frag.appendChild(mk);if(aft)frag.appendChild(document.createTextNode(aft));var par=e.node.parentNode;if(par){par.insertBefore(frag,e.node);par.removeChild(e.node)}start+=(le-ls);if(start>=te)break}
+}
+function activate(idx){
+    if(idx<0||idx>=searchMatches.length)return;
+    hc.querySelectorAll('mark.search-highlight.current').forEach(function(m){m.classList.remove('current')});
+    var am=hc.querySelectorAll('mark.search-highlight');if(am[idx]){am[idx].classList.add('current');am[idx].scrollIntoView({block:'center',behavior:'smooth'})}
+    var d=pf.contentDocument;if(d){d.querySelectorAll('mark._editor_search.current').forEach(function(m){m.classList.remove('current')});var pm=d.querySelectorAll('mark._editor_search');if(pm[idx]){pm[idx].classList.add('current');pm[idx].scrollIntoView({block:'center',behavior:'smooth'})}}
+    sc.textContent=(idx+1)+'/'+searchMatches.length;searchIndex=idx;
+}
+function nav(dir){if(searchMatches.length===0)return;var ni=searchIndex+dir;if(ni<0)ni=searchMatches.length-1;if(ni>=searchMatches.length)ni=0;activate(ni)}
+si.addEventListener('input',function(){clearTimeout(pendingSearch);var q=si.value;pendingSearch=setTimeout(function(){performSearch(q)},300)});
+si.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();nav(e.shiftKey?-1:1)}if(e.key==='Escape'){e.preventDefault();closeSearch()}});
+bp.addEventListener('click',function(){nav(-1)});bn.addEventListener('click',function(){nav(1)});bc.addEventListener('click',closeSearch);
+function closeSearch(){searchActive=false;clearSearch();sb.style.display='none';searchMatches=[];searchIndex=0;si.value='';sc.textContent=''}
+document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&e.key==='f'){e.preventDefault();sb.style.display='flex';si.focus();si.select()}});
+
+// ── Init ──
+var DEFAULT_HTML='<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>HTMLeditor - Demo</title>\n    <style>\n        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.7;color:#333;background:#fafafa}\n        h1{color:#2563eb;font-size:28px;border-bottom:2px solid #e5e7eb;padding-bottom:12px}\n        h2{color:#1e40af;font-size:20px;margin-top:24px}\n        .card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:20px;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,.08)}\n        .hl{background:linear-gradient(120deg,#fef08a,#fef08a);padding:2px 6px;border-radius:3px}\n        ul{padding-left:20px}li{margin:6px 0}\n        code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:14px}\n        .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e5e7eb;color:#999;font-size:13px}\n    </style>\n</head>\n<body>\n    <h1>HTMLeditor — Visual Editor</h1>\n    <p style="color:#666;font-size:15px;margin-top:-8px">by RayZhang</p>\n\n    <p>This is a <span class="hl">directly editable</span> demo. Click any text in the left preview area to start editing.</p>\n\n    <div class="card">\n        <h2>Why HTMLeditor?</h2>\n        <p>When generating HTML5 pages with LLMs (ChatGPT, Claude, etc.), you often face:</p>\n        <ul>\n            <li><strong>Difficult fine-tuning:</strong> LLM outputs rarely match requirements perfectly; iterative chat adjustments waste tokens</li>\n            <li><strong>Token waste:</strong> Every tweak requires resending full context — costly at scale</li>\n            <li><strong>Data security:</strong> Repeatedly processing sensitive content through cloud AI risks exposure</li>\n            <li><strong>Low efficiency:</strong> Switching between source code and preview is slow and error-prone</li>\n        </ul>\n        <p style="margin-top:8px;color:#2563eb">HTMLeditor solves all of these — <strong>zero token cost, fully local, data never leaves your browser.</strong></p>\n    </div>\n\n    <div class="card">\n        <h2>Features</h2>\n        <ul>\n            <li><strong>WYSIWYG editing:</strong> Edit text directly in the preview pane</li>\n            <li><strong>Real-time sync:</strong> Source code highlights update as you edit</li>\n            <li><strong>Full-text search:</strong> Dual-pane synchronized highlighting with navigation</li>\n            <li><strong>One-click download:</strong> Save your modified HTML instantly</li>\n        </ul>\n    </div>\n\n    <div class="card">\n        <h2>Search</h2>\n        <p>Press <code>Ctrl+F</code> / <code>⌘F</code> to search. Matches highlight in <strong>both panes</strong> simultaneously.</p>\n        <ul>\n            <li><code>Enter</code> — next match | <code>Shift+Enter</code> — previous match</li>\n            <li>Current match in <strong>orange</strong>, others in yellow</li>\n            <li><code>Esc</code> to close search</li>\n        </ul>\n    </div>\n\n    <div class="card">\n        <h2>Shortcuts</h2>\n        <ul>\n            <li><code>Ctrl+S</code> / <code>⌘S</code> — quick download</li>\n            <li>Drag & drop <code>.html</code> files onto the preview area to load</li>\n            <li>Drag the divider to resize panes</li>\n        </ul>\n    </div>\n\n    <div class="card">\n        <h2>Try editing this!</h2>\n        <p>Click any text to edit. Modify titles, add content, or tweak styles — the source code updates live.</p>\n    </div>\n\n    <p class="footer">HTMLeditor — fully browser-based. No backend, no install, no data leakage.</p>\n</body>\n</html>';
+
+setStatus('ready');
+loadHtml(DEFAULT_HTML,'demo.html');
 
 })();
 </script>
