@@ -626,7 +626,9 @@ mark._editor_search.current {
         // that MutationObserver might miss in certain browser/contenteditable combos)
         pollInterval = setInterval(function() {
             if (updatingFromSource) return;
-            if (searchActive) return; // Don't sync while search is active (marks pollute source)
+            if (searchActive) return;
+            // Don't sync while user is editing in the iframe
+            if (document.activeElement && document.activeElement.tagName === 'IFRAME') return;
             var current = getCleanHtml(doc);
             if (current !== lastPolledHtml) {
                 lastPolledHtml = current;
