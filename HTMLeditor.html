@@ -592,7 +592,8 @@ mark._editor_search.current {
         // MutationObserver: catches structural changes (add/remove elements etc.)
         mutationObserver = new MutationObserver(function(records) {
             if (updatingFromSource) return;
-            // Skip if all mutations are just our own attribute/style changes
+            var ae = document.activeElement;
+            if (ae && (ae === previewFrame || ae.ownerDocument === doc)) return;
             var meaningful = false;
             for (var i = 0; i < records.length; i++) {
                 var t = records[i].type;
@@ -628,7 +629,8 @@ mark._editor_search.current {
             if (updatingFromSource) return;
             if (searchActive) return;
             // Don't sync while user is editing in the iframe
-            if (document.activeElement && document.activeElement.tagName === 'IFRAME') return;
+            var ae = document.activeElement;
+            if (ae && (ae === previewFrame || ae.ownerDocument === doc)) return;
             var current = getCleanHtml(doc);
             if (current !== lastPolledHtml) {
                 lastPolledHtml = current;
@@ -661,18 +663,18 @@ mark._editor_search.current {
         var doc = previewFrame.contentDocument;
         if (!doc || !doc.body) return;
 
-        // Check if the active element is inside the iframe — if so, user is editing,
-        // skip sync to avoid stealing focus
-        if (document.activeElement && document.activeElement.tagName === 'IFRAME') return;
+        // If the user is actively focused inside the iframe, skip sync to avoid
+        // stealing focus — the poll will pick up changes once they blur away
+        var ae = document.activeElement;
+        if (ae && (ae === previewFrame || ae.ownerDocument === doc)) return;
 
         var fullHtml = '<!DOCTYPE html>\n' + getCleanHtml(doc);
 
         if (sourceTextarea.value !== fullHtml) {
-            suppressSourceUpdate = true;
             originalHtml = fullHtml;
+            suppressSourceUpdate = true;
             sourceTextarea.value = fullHtml;
             highlightCode(fullHtml);
-            // Re-run search if active (source text changed, old markup positions invalid)
             if (searchActive && searchInput.value) {
                 performSearch(searchInput.value);
             }
@@ -729,16 +731,19 @@ mark._editor_search.current {
 
     // ── Source textarea input (debounced) ─────────
     sourceTextarea.addEventListener('input', function() {
-        highlightCode(sourceTextarea.value);
-        updateLineNumbers(sourceTextarea.value);
-
         if (suppressSourceUpdate) {
             suppressSourceUpdate = false;
+            // Still update highlight
+            highlightCode(sourceTextarea.value);
+            updateLineNumbers(sourceTextarea.value);
             return;
         }
 
+        highlightCode(sourceTextarea.value);
+        updateLineNumbers(sourceTextarea.value);
+
         clearTimeout(sourceUpdateTimeout);
-        sourceUpdateTimeout = setTimeout(() => {
+        sourceUpdateTimeout = setTimeout(function() {
             syncSourceToPreview();
         }, 600);
     });
