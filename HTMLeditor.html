@@ -659,6 +659,10 @@ mark._editor_search.current {
         var doc = previewFrame.contentDocument;
         if (!doc || !doc.body) return;
 
+        // Check if the active element is inside the iframe — if so, user is editing,
+        // skip sync to avoid stealing focus
+        if (document.activeElement && document.activeElement.tagName === 'IFRAME') return;
+
         var fullHtml = '<!DOCTYPE html>\n' + getCleanHtml(doc);
 
         if (sourceTextarea.value !== fullHtml) {
